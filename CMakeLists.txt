@@ -40,6 +40,6 @@ set(CMAKE_CXX_FLAGS "-O3 -fPIC")
 # add_executable(example_joystick example/example_joystick.cpp)
 # target_link_libraries(example_joystick ${EXTRA_LIBS})
 
-add_executable(read_data src/read_data.cpp)
+add_executable(read_data src/read_data.cpp src/pretty_print.cpp)
 target_link_libraries(read_data ${EXTRA_LIBS})
 

@@ -1,8 +1,8 @@
 
 #include "unitree_legged_sdk/unitree_legged_sdk.h"
+#include "pretty_print.h"
 #include <math.h>
 #include <iostream>
-#include <iomanip>
 #include <unistd.h>
 #include <string.h>
 
@@ -41,46 +41,16 @@ void Custom::UDPUpdate()
     udp.Send();
 }
 
-void printIMU(const IMU& imu) {
-    std::cout << std::fixed << std::setprecision(4); // Set precision for floating point numbers
-    
-    std::cout << "\nIMU Data:\n";
-    std::cout << "Quaternion: (" 
-              << imu.quaternion[0] << ", " 
-              << imu.quaternion[1] << ", " 
-              << imu.quaternion[2] << ", " 
-              << imu.quaternion[3] << ")\n";
-    
-    std::cout << "Gyroscope: (" 
-              << imu.gyroscope[0] << " rad/s, " 
-              << imu.gyroscope[1] << " rad/s, " 
-              << imu.gyroscope[2] << " rad/s)\n";
-    
-    std::cout << "Accelerometer: (" 
-              << imu.accelerometer[0] << " m/s^2, " 
-              << imu.accelerometer[1] << " m/s^2, " 
-              << imu.accelerometer[2] << " m/s^2)\n";
-    
-    std::cout << "RPY (Euler angles): (" 
-              << imu.rpy[0] << " rad, " 
-              << imu.rpy[1] << " rad, " 
-              << imu.rpy[2] << " rad)\n";
-    
-    std::cout << "Temperature: " << static_cast<int>(imu.temperature) << "\n";
-}
-
 
 void Custom::RobotControl()
 {
     udp.GetRecv(state);
 
-    printIMU(state.imu);
-
-    printf("\nMotor pos: ");
-    for (uint8_t i = 0; i < 11; i++) {
-        printf("%.2f, ", state.motorState[i].q);
-    }
-    printf("%.2f\n", state.motorState[11].q);
+    #ifdef IS_LOWLEVEL
+    printLowState(state);
+    #else
+    printHighState(state);
+    #endif // IS_LOWLEVEL
 }
 
 int main(void)
