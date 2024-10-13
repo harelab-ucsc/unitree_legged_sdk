@@ -32,6 +32,9 @@ public:
 
     UDP udp;
     STATETYPE state = {0};
+    std::array<float, 3> pos = {0, 0, 0};
+    std::array<float, 3> initial_state_pos = {0, 0, 0};
+    bool setInitialStatePos = false;
     float dt = 0.002; // 0.001~0.01
 };
 
@@ -46,9 +49,23 @@ void Custom::RobotControl()
 {
     udp.GetRecv(state);
 
+    if (!setInitialStatePos) {
+        initial_state_pos[0] = state.position[0];
+        initial_state_pos[1] = state.position[1];
+        initial_state_pos[2] = state.position[2];
+    }
+
+    pos[0] += state.imu.accelerometer[0] * dt * dt;
+    pos[1] += state.imu.accelerometer[1] * dt * dt;
+    pos[2] += state.imu.accelerometer[2] * dt * dt;
+
+    std::cout << "IMU Accumulated Position: " << pos[0] << ", " << pos[1] << ", " << pos[2] << " \n";
+
     #ifdef IS_LOWLEVEL
     printLowState(state);
     #else
+    std::cout << "High State Position:      " << (state.position[0] - initial_state_pos[0]) << ", " 
+              << (state.position[1] - initial_state_pos[1]) << ", " << (state.position[2] - initial_state_pos[2]) << " \n ---------------------\n\n";
     printHighState(state);
     #endif // IS_LOWLEVEL
 }
