@@ -5,6 +5,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <string.h>
+#include <iomanip>
 
 // #define IS_LOWLEVEL
 
@@ -35,6 +36,7 @@ public:
     std::array<float, 3> pos = {0, 0, 0};
     std::array<float, 3> initial_state_pos = {0, 0, 0};
     bool setInitialStatePos = false;
+    uint64_t loop_count = 0;
     float dt = 0.002; // 0.001~0.01
 };
 
@@ -47,9 +49,10 @@ void Custom::UDPUpdate()
 
 void Custom::RobotControl()
 {
+    loop_count++;
     udp.GetRecv(state);
 
-    if (!setInitialStatePos) {
+    if (loop_count > 10 && !setInitialStatePos) {
         initial_state_pos[0] = state.position[0];
         initial_state_pos[1] = state.position[1];
         initial_state_pos[2] = state.position[2];
@@ -58,16 +61,23 @@ void Custom::RobotControl()
 
     pos[0] += state.imu.accelerometer[0] * dt * dt;
     pos[1] += state.imu.accelerometer[1] * dt * dt;
-    pos[2] += state.imu.accelerometer[2] * dt * dt;
+    pos[2] += (state.imu.accelerometer[2] - 9.81)* dt * dt;
 
-    std::cout << "IMU Accumulated Position: " << pos[0] << ", " << pos[1] << ", " << pos[2] << " \n";
+    // set floating point precision and + sign for positive
+    std::cout << std::fixed << std::setprecision(3);
+    std::cout << std::showpos;
+    
+    std::cout << "Accelerometer Acceleration: " << state.imu.accelerometer[0] << ", " << state.imu.accelerometer[1] << ", " << state.imu.accelerometer[2] << " \n";
+    std::cout << "IMU Accumulated Position:   " << pos[0] << ", " << pos[1] << ", " << pos[2] << " \n";
 
     #ifdef IS_LOWLEVEL
     printLowState(state);
     #else
-    std::cout << "High State Position:      " << (state.position[0] - initial_state_pos[0]) << ", " 
-              << (state.position[1] - initial_state_pos[1]) << ", " << (state.position[2] - initial_state_pos[2]) << " \n ---------------------\n\n";
-    printHighState(state);
+    std::cout << "High State Position:        " << (state.position[0] - initial_state_pos[0]) << ", " 
+              << (state.position[1] - initial_state_pos[1]) << ", " << (state.position[2] - initial_state_pos[2]) << 
+              "\nRaw: " << state.position[0] << ", " << state.position[1] << ", " << state.position[2] << 
+              " \n ---------------------\n\n";
+    // printHighState(state);
     #endif // IS_LOWLEVEL
 }
 
