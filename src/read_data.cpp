@@ -53,6 +53,7 @@ void Custom::RobotControl()
         initial_state_pos[0] = state.position[0];
         initial_state_pos[1] = state.position[1];
         initial_state_pos[2] = state.position[2];
+        setInitialStatePos = true;
     }
 
     pos[0] += state.imu.accelerometer[0] * dt * dt;
