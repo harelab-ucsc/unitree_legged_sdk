@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <iomanip>
+#include <boost/circular_buffer.hpp>
+#include <fstream>
 
 // #define IS_LOWLEVEL
 
@@ -24,6 +26,8 @@ class Custom
 {
 public:
     Custom() :
+        accel_buffer(20),
+        outFile("out.csv"),
         UDP_INIT
     {
         // udp.print = true;
@@ -38,6 +42,8 @@ public:
     bool setInitialStatePos = false;
     uint64_t loop_count = 0;
     float dt = 0.002; // 0.001~0.01
+    boost::circular_buffer<int> accel_buffer;
+    std::ofstream outFile;
 };
 
 void Custom::UDPUpdate()
@@ -63,11 +69,19 @@ void Custom::RobotControl()
     pos[1] += state.imu.accelerometer[1] * dt * dt;
     pos[2] += (state.imu.accelerometer[2] - 9.81)* dt * dt;
 
+    accel_buffer.push_back(state.imu.accelerometer[0]);
+
     // set floating point precision and + sign for positive
     std::cout << std::fixed << std::setprecision(3);
     std::cout << std::showpos;
+
+    float sum = 0.0;
+    for (uint8_t i = 0; i < accel_buffer.size(); i++) {
+        sum += accel_buffer[i];
+    }
     
     std::cout << "Accelerometer Acceleration: " << state.imu.accelerometer[0] << ", " << state.imu.accelerometer[1] << ", " << state.imu.accelerometer[2] << " \n";
+    std::cout << "Accelerometer Accel avg:    " << (sum / accel_buffer.size()) << " \n";
     std::cout << "IMU Accumulated Position:   " << pos[0] << ", " << pos[1] << ", " << pos[2] << " \n";
 
     #ifdef IS_LOWLEVEL
@@ -77,6 +91,13 @@ void Custom::RobotControl()
               << (state.position[1] - initial_state_pos[1]) << ", " << (state.position[2] - initial_state_pos[2]) << 
               "\nRaw: " << state.position[0] << ", " << state.position[1] << ", " << state.position[2] << 
               " \n ---------------------\n\n";
+
+    // Writing to file
+    if (outFile) {
+        outFile << (state.position[0] - initial_state_pos[0]) << ", " << (state.position[1] - initial_state_pos[1]) << ", " << (state.position[2] - initial_state_pos[2]) << "\n";
+        std::cout << "writing to file..." << std::endl;
+    }
+
     // printHighState(state);
     #endif // IS_LOWLEVEL
 }
